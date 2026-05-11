@@ -1,5 +1,7 @@
 # agent-admin
 
+> 中文文档见 [`readme-zh.md`](./readme-zh.md)
+
 A macOS command-line tool to manage locally installed AI coding agents
 (Claude Code, Cursor, OpenAI Codex CLI, Gemini CLI, Aider, GitHub Copilot
 CLI, Continue, Crush, opencode, …) along with their runtime dependencies,
