@@ -1,0 +1,32 @@
+{
+  "name": "agent-admin",
+  "version": "0.1.0",
+  "description": "CLI to manage locally installed AI coding agents and their dependencies on macOS",
+  "bin": {
+    "agent-admin": "bin/agent-admin.js",
+    "aa": "bin/agent-admin.js"
+  },
+  "main": "src/cli.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node bin/agent-admin.js",
+    "test": "node --test test/"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "agent",
+    "ai",
+    "cli",
+    "claude-code",
+    "cursor",
+    "codex",
+    "mcp"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "commander": "^12.1.0"
+  }
+}
