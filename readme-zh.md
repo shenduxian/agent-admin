@@ -44,7 +44,9 @@ agent-admin creds status          # 哪些 API key 环境变量已设置(脱敏�
 agent-admin registry              # 本工具认识的所有 agent id
 ```
 
-所有打印表格的命令都支持 `--json`,方便脚本调用。
+所有打印表格的命令都支持 `--json`,方便脚本调用。每个命令和子命令都有 `--help`
+(如 `agent-admin config show --help`)。输入了不存在的 agent / 命令 / 选项时会给
+"你是不是想输入 …?" 的提示。
 
 ## 命令详解
 

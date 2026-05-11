@@ -45,7 +45,9 @@ agent-admin creds status          # which API key env vars are set (masked)
 agent-admin registry              # every agent id this tool knows about
 ```
 
-Every command that prints a table also accepts `--json` for scripting.
+Every command that prints a table also accepts `--json` for scripting, and
+every command/subcommand has `--help` (e.g. `agent-admin config show --help`).
+Unknown agents, commands, and options produce a "did you mean …?" hint.
 
 ## Tests
 

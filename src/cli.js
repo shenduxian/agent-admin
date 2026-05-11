@@ -21,13 +21,22 @@ const {
 const { ensureMacOS } = require('./utils');
 
 function run(argv) {
-  ensureMacOS();
+  ensureMacOS(argv.slice(2));
   const program = new Command();
 
   program
     .name('agent-admin')
     .description('Manage locally installed AI coding agents (Claude Code, Cursor, Codex, Gemini, Aider, …) and their dependencies.')
-    .version(pkg.version, '-v, --version');
+    .version(pkg.version, '-v, --version')
+    .addHelpText(
+      'after',
+      '\nExamples:\n' +
+        '  agent-admin list                 # what is installed\n' +
+        '  agent-admin info claude-code     # details for one agent\n' +
+        '  agent-admin doctor               # runtime + credential health check\n' +
+        '  agent-admin mcp list             # MCP servers across agents\n' +
+        '\nRun `agent-admin <command> --help` for command-specific options.',
+    );
 
   registerList(program);
   registerInfo(program);
@@ -37,10 +46,60 @@ function run(argv) {
   registerCreds(program);
   registerRegistry(program);
 
+  // Friendlier error UX: typo suggestions + a pointer to --help, applied to
+  // every (sub)command, not just the root.
+  forEachCommand(program, (cmd) => {
+    cmd.showSuggestionAfterError(true);
+    cmd.showHelpAfterError('(run with --help for usage)');
+  });
+
   program.parseAsync(argv).catch((err) => {
     process.stderr.write(chalk.red(`error: ${err.message || err}\n`));
     process.exit(1);
   });
+}
+
+function forEachCommand(cmd, fn) {
+  fn(cmd);
+  for (const c of cmd.commands) forEachCommand(c, fn);
+}
+
+/**
+ * Resolve an agent id/name or print a friendly error (with typo suggestions)
+ * and exit. Used by every command that takes an <agent> argument.
+ */
+function resolveAgentOrExit(input) {
+  const agent = findAgent(input);
+  if (agent) return agent;
+  const q = String(input || '').toLowerCase().replace(/[\s_-]/g, '');
+  let near = [];
+  if (q.length >= 2) {
+    near = AGENTS.filter((a) => {
+      const aid = a.id.replace(/-/g, '');
+      const name = a.name.toLowerCase().replace(/[\s-]/g, '');
+      return aid.includes(q) || q.includes(aid) || name.includes(q) || editDistance(aid, q) <= 2;
+    }).map((a) => a.id);
+  }
+  const hint = near.length
+    ? `did you mean: ${near.join(', ')}?`
+    : 'run `agent-admin registry` to see the full list';
+  fail(`unknown agent "${input}" — ${hint}`);
+}
+
+function editDistance(a, b) {
+  const m = a.length;
+  const n = b.length;
+  if (Math.abs(m - n) > 3) return 99;
+  let prev = Array.from({ length: n + 1 }, (_, i) => i);
+  for (let i = 1; i <= m; i++) {
+    const cur = [i];
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      cur[j] = Math.min(cur[j - 1] + 1, prev[j] + 1, prev[j - 1] + cost);
+    }
+    prev = cur;
+  }
+  return prev[n];
 }
 
 // ---------------------------------------------------------------------------
@@ -71,8 +130,7 @@ function registerInfo(program) {
     .description('Show detailed status for a single agent')
     .option('--json', 'machine-readable output')
     .action((id, opts) => {
-      const agent = findAgent(id);
-      if (!agent) return fail(`unknown agent: ${id}. Try \`agent-admin registry\`.`);
+      const agent = resolveAgentOrExit(id);
       const status = detectAgent(agent);
       const detail = {
         ...status,
@@ -137,8 +195,7 @@ function registerConfig(program) {
     .command('show <agent>')
     .description('Show the config file/dir paths an agent uses and whether they exist')
     .action((id) => {
-      const agent = findAgent(id);
-      if (!agent) return fail(`unknown agent: ${id}`);
+      const agent = resolveAgentOrExit(id);
       const rows = listConfigsFor(agent);
       if (!rows.length) {
         console.log(chalk.dim('no known config paths for this agent'));
@@ -196,8 +253,7 @@ function registerMcp(program) {
     .command('show <agent>')
     .description('Show MCP servers configured for a single agent')
     .action((id) => {
-      const agent = findAgent(id);
-      if (!agent) return fail(`unknown agent: ${id}`);
+      const agent = resolveAgentOrExit(id);
       const servers = extractMcpServers(agent);
       if (!servers.length) {
         console.log(chalk.dim(`no MCP servers configured for ${agent.id}`));
@@ -351,6 +407,9 @@ function printDoctorReport(report) {
   }
 
   console.log(chalk.bold('\nagents'));
+  if (!report.agents.length) {
+    console.log(chalk.dim('  no installed agents detected — run `agent-admin doctor --all` to check every known agent'));
+  }
   for (const a of report.agents) {
     const tag = a.installed ? (a.partial ? chalk.yellow('~') : chalk.green('✓')) : chalk.dim('·');
     console.log(`  ${tag}  ${a.id}${a.version ? '  ' + chalk.dim(a.version) : ''}`);

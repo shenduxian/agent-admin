@@ -114,6 +114,36 @@ test('unknown agent exits with code 2', () => {
   assert.match(stderr, /unknown agent/);
 });
 
+test('a near-miss agent name gets a "did you mean" suggestion', () => {
+  const { code, stderr } = run(['info', 'claud']);
+  assert.equal(code, 2);
+  assert.match(stderr, /did you mean: claude-code/);
+});
+
+test('a single-char-typo agent name gets a suggestion via edit distance', () => {
+  const { stderr } = run(['info', 'curser']);
+  assert.match(stderr, /did you mean: cursor/);
+});
+
+test('an entirely unknown agent points at the registry command', () => {
+  const { stderr } = run(['info', 'zzzzzz']);
+  assert.match(stderr, /agent-admin registry/);
+});
+
+test('an unknown command suggests a close one and points at --help', () => {
+  const { code, stderr } = run(['infoo']);
+  assert.equal(code, 1);
+  assert.match(stderr, /Did you mean info\?/);
+  assert.match(stderr, /--help/);
+});
+
+test('a missing required argument points at --help', () => {
+  const { code, stderr } = run(['info']);
+  assert.equal(code, 1);
+  assert.match(stderr, /missing required argument/);
+  assert.match(stderr, /--help/);
+});
+
 test('creds status --json is not a command (only text) but creds status --all runs', () => {
   // `creds status` is text-only; just assert it exits cleanly.
   const { code } = run(['creds', 'status', '--all']);

@@ -76,10 +76,14 @@ function readTextSafe(p, maxBytes = 64 * 1024) {
   }
 }
 
-function ensureMacOS() {
-  if (process.platform !== 'darwin') {
-    process.stderr.write(`warning: this tool targets macOS; current platform is ${process.platform}\n`);
-  }
+function ensureMacOS(argv = []) {
+  if (process.platform === 'darwin') return;
+  // Don't nag when the user just wants help or the version string.
+  const meta = new Set(['-h', '--help', 'help', '-v', '--version']);
+  if (argv.some((a) => meta.has(a))) return;
+  process.stderr.write(
+    `note: agent-admin targets macOS; some paths and install hints may not apply on ${process.platform}\n`,
+  );
 }
 
 module.exports = {
