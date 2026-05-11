@@ -1,0 +1,10 @@
+name: my-config
+mcpServers:
+  playwright:
+    command: npx
+    args:
+      - "@playwright/mcp"
+  github:
+    command: docker
+models:
+  - provider: anthropic

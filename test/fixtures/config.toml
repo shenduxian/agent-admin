@@ -1,0 +1,9 @@
+model = "o4-mini"
+
+[mcp_servers.docs]
+command = "npx"
+args = ["-y", "docs-mcp"]
+
+[mcp_servers.search]
+command = "uvx"
+args = ["search-mcp"]

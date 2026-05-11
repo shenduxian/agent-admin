@@ -45,6 +45,16 @@ agent-admin registry              # every agent id this tool knows about
 
 Every command that prints a table also accepts `--json` for scripting.
 
+## Tests
+
+```bash
+npm test     # node --test, no extra deps
+```
+
+Covers the registry shape, the detection cascade (bin / .app / leftover
+config), runtime + credential checks, the JSON/TOML/YAML MCP parsers, and
+the CLI end-to-end (output, `--json`, exit codes, credential masking).
+
 ## Supported agents (initial)
 
 | id           | name                  |
