@@ -14,6 +14,18 @@ function which(bin) {
   }
 }
 
+// Every match for `bin` on PATH, in priority order, de-duplicated. Lets us
+// surface the "I have three copies of node and the wrong one wins" situation.
+function whichAll(bin) {
+  try {
+    const out = execFileSync('/usr/bin/which', ['-a', bin], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    const lines = out.split('\n').map((s) => s.trim()).filter(Boolean);
+    return [...new Set(lines)];
+  } catch {
+    return [];
+  }
+}
+
 function tryVersion(bin, args = ['--version'], timeoutMs = 4000) {
   try {
     const out = execFileSync(bin, args, {
@@ -72,6 +84,7 @@ function ensureMacOS() {
 
 module.exports = {
   which,
+  whichAll,
   tryVersion,
   pathExists,
   readJsonSafe,

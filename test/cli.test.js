@@ -49,6 +49,7 @@ test('registry --json returns every known agent id', () => {
     'gemini',
     'gh-copilot',
     'opencode',
+    'trae-cli',
   ]);
 });
 
@@ -56,7 +57,7 @@ test('list --json returns a status object per agent with stable keys', () => {
   const { code, stdout } = run(['list', '--json']);
   assert.equal(code, 0);
   const rows = JSON.parse(stdout);
-  assert.equal(rows.length, 9);
+  assert.equal(rows.length, 10);
   for (const r of rows) {
     assert.ok(typeof r.id === 'string');
     assert.ok(typeof r.installed === 'boolean');
@@ -78,7 +79,7 @@ test('doctor --json reports runtimes and agents', () => {
   assert.ok(Array.isArray(report.runtimes));
   assert.equal(report.runtimes.length, 3);
   assert.ok(Array.isArray(report.agents));
-  assert.equal(report.agents.length, 9);
+  assert.equal(report.agents.length, 10);
 });
 
 test('info <agent> --json includes config, runtimes, mcp, credentials', () => {
@@ -89,7 +90,17 @@ test('info <agent> --json includes config, runtimes, mcp, credentials', () => {
   assert.ok(Array.isArray(d.configPaths));
   assert.ok(Array.isArray(d.runtimes));
   assert.ok(Array.isArray(d.mcpServers));
+  assert.ok(Array.isArray(d.binPaths));
+  assert.equal(typeof d.multipleInstalls, 'boolean');
   assert.ok(d.credentials && Array.isArray(d.credentials.env));
+});
+
+test('info trae-cli --json works and points at the .coco data dir', () => {
+  const { code, stdout } = run(['info', 'trae-cli', '--json']);
+  assert.equal(code, 0);
+  const d = JSON.parse(stdout);
+  assert.equal(d.id, 'trae-cli');
+  assert.ok(d.configPaths.some((c) => c.path.endsWith('/.coco')));
 });
 
 test('info accepts dash-insensitive / display-name lookups', () => {

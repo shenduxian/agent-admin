@@ -4,7 +4,7 @@
 
 A macOS command-line tool to manage locally installed AI coding agents
 (Claude Code, Cursor, OpenAI Codex CLI, Gemini CLI, Aider, GitHub Copilot
-CLI, Continue, Crush, opencode, …) along with their runtime dependencies,
+CLI, Continue, Crush, opencode, Trae CLI, …) along with their runtime dependencies,
 configuration files, MCP servers, and API keys — all from one place.
 
 ## Why
@@ -70,8 +70,24 @@ the CLI end-to-end (output, `--json`, exit codes, credential masking).
 | continue     | Continue              |
 | crush        | Charm Crush           |
 | opencode     | opencode              |
+| trae-cli     | Trae CLI (ByteDance)  |
+
+`trae-cli` keeps its data under `~/.coco` (with `~/.trae` / `~/.trae-agent`
+also checked); since `docs.trae.cn/cli` is CDN-gated, the exact filenames
+under `~/.coco` are a best-effort guess — only the dir and the
+`npm i -g trae-cli` install are confirmed. Correct them in `src/registry.js`
+if you know better.
 
 Add more by editing `src/registry.js` — each entry is plain data.
+
+### Multiple copies of the same agent
+
+`list`, `info`, and `doctor` collect *every* match for an agent's binary on
+`PATH` (via `which -a`), not just the first one. So if you have, say, a brew
+build, an npm-global install, and an nvm-managed copy all called `claude`,
+you'll see a `(+N more)` marker in `list` and the full list — with each
+copy's reported version — in `info`. The first entry is the one your shell
+actually runs.
 
 ## Design notes
 

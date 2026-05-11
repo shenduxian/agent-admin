@@ -74,6 +74,54 @@ test('an agent whose bin resolves on PATH is reported as installed with a versio
   assert.notEqual(status.partial, true);
 });
 
+test('detectAgent reports multiple installs when a bin appears twice on PATH', () => {
+  const a = tmpdir();
+  const b = tmpdir();
+  const origPath = process.env.PATH;
+  try {
+    for (const d of [a, b]) {
+      const f = path.join(d, 'faketool');
+      fs.writeFileSync(f, '#!/bin/sh\necho "faketool 1.2.3"\n');
+      fs.chmodSync(f, 0o755);
+    }
+    process.env.PATH = `${a}:${b}:${origPath}`;
+    const status = detectAgent({
+      id: 'ft',
+      name: 'FakeTool',
+      kind: 'cli',
+      bins: ['faketool'],
+      versionArgs: ['--version'],
+      configPaths: [],
+      runtimes: [],
+    });
+    assert.equal(status.installed, true);
+    assert.equal(status.multipleInstalls, true);
+    assert.equal(status.binPaths.length, 2);
+    assert.equal(status.binPath, path.join(a, 'faketool'));
+    assert.equal(status.version, 'faketool 1.2.3');
+    assert.deepEqual(status.binPaths.map((x) => x.path), [path.join(a, 'faketool'), path.join(b, 'faketool')]);
+  } finally {
+    process.env.PATH = origPath;
+    fs.rmSync(a, { recursive: true, force: true });
+    fs.rmSync(b, { recursive: true, force: true });
+  }
+});
+
+test('detectAgent does not flag multipleInstalls for a single copy', () => {
+  const status = detectAgent({
+    id: 'node-as-agent',
+    name: 'Node',
+    kind: 'cli',
+    bins: ['node'],
+    versionArgs: ['--version'],
+    configPaths: [],
+    runtimes: [],
+  });
+  // there may legitimately be >1 node on PATH in some envs; only assert the
+  // flag is a boolean consistent with binPaths length.
+  assert.equal(status.multipleInstalls, status.binPaths.length > 1);
+});
+
 test('an agent with an existing appPath is reported as installed', () => {
   const dir = tmpdir();
   try {

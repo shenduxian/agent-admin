@@ -2,7 +2,7 @@
 
 一个 macOS 命令行工具,用于统一管理本机安装的各种 AI 编码 agent
 (Claude Code、Cursor、OpenAI Codex CLI、Gemini CLI、Aider、GitHub
-Copilot CLI、Continue、Crush、opencode 等),以及它们的运行时依赖、
+Copilot CLI、Continue、Crush、opencode、Trae CLI 等),以及它们的运行时依赖、
 配置文件、MCP server 和 API key —— 一个 CLI 全部搞定。
 
 > English version: see [`README.md`](./README.md)
@@ -99,11 +99,24 @@ agent-admin registry              # 本工具认识的所有 agent id
 | `continue`     | Continue              | `~/.continue/` 配置目录 |
 | `crush`        | Charm Crush           | `crush` 命令 + `~/.config/crush` |
 | `opencode`     | opencode              | `opencode` 命令 + `~/.config/opencode` |
+| `trae-cli`     | Trae CLI(字节跳动)  | `trae` / `trae-cli` 命令 + `~/.coco` / `~/.trae` / `~/.trae-agent` + `/Applications/Trae.app` |
 
 判定规则:**命令在 PATH 上 OR `.app` Bundle 存在 OR 已知配置目录存在** 即视为已安装;
 若只剩配置残留(命令不在了)则标记为 `~ partial`。
 
+> ⚠️ 关于 `trae-cli`:它的数据目录是 `~/.coco`(同时也会检查 `~/.trae`、`~/.trae-agent`)。
+> 由于 `docs.trae.cn/cli` 有 CDN 访问限制,`~/.coco` 下的具体文件名(`config.json`、`auth.json` 等)
+> 目前是**尽力推测**的,只有"目录是 `~/.coco`"和"`npm i -g trae-cli` 安装"是确认过的。
+> 如果你知道准确路径,改 `src/registry.js` 里那一条即可。
+
 想加新的 agent?编辑 `src/registry.js` 即可 —— 每个条目都是纯数据,不含逻辑。
+
+### 同一个 agent 装了多个版本
+
+`list`、`info`、`doctor` 会用 `which -a` 收集某个 agent 二进制在 `PATH` 上的**所有**匹配,
+而不只是第一个。所以如果你同时有 brew 装的、npm 全局装的、nvm 管的好几份 `claude`,
+`list` 里会看到 `(+N more)` 标记,`info` 里会列出全部路径(各自的版本号也会显示),
+排在第一位的就是你 shell 实际会执行的那一份。
 
 ## 测试
 

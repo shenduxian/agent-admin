@@ -16,6 +16,7 @@ test('registry exposes the expected set of agents', () => {
     'gemini',
     'gh-copilot',
     'opencode',
+    'trae-cli',
   ]);
 });
 
@@ -44,6 +45,8 @@ test('findAgent resolves by id, name, and dash-insensitively', () => {
   assert.equal(findAgent('Claude Code').id, 'claude-code');
   assert.equal(findAgent('claudecode').id, 'claude-code');
   assert.equal(findAgent('GH-Copilot').id, 'gh-copilot');
+  assert.equal(findAgent('trae-cli').id, 'trae-cli');
+  assert.equal(findAgent('Trae CLI').id, 'trae-cli');
   assert.equal(findAgent(''), undefined);
   assert.equal(findAgent('does-not-exist'), undefined);
 });

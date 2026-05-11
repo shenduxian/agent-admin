@@ -130,6 +130,32 @@ const AGENTS = [
     installHint: 'curl -fsSL https://opencode.ai/install | bash',
     runtimes: [],
   },
+  {
+    // ByteDance Trae's agentic CLI (docs.trae.cn/cli). Note: the upstream docs
+    // page is geo/CDN-gated, so the exact on-disk filenames below are
+    // best-effort — the `~/.coco` data dir and `npm i -g trae-cli` install are
+    // the reliably-confirmed bits. `trae` also doubles as the IDE launcher
+    // (like `code`), which is why the .app bundles count toward detection.
+    id: 'trae-cli',
+    name: 'Trae CLI',
+    kind: 'cli',
+    bins: ['trae', 'trae-cli'],
+    versionArgs: ['--version'],
+    appPaths: ['/Applications/Trae.app', '/Applications/Trae CN.app'],
+    configPaths: [
+      hp('.coco'),
+      hp('.coco', 'config.json'),
+      hp('.coco', 'settings.json'),
+      hp('.trae'),
+      hp('.trae-agent'),
+    ],
+    mcpPaths: [hp('.coco', 'mcp.json'), hp('.coco', 'config.json')],
+    credsEnv: ['TRAE_API_KEY'],
+    credsFiles: [hp('.coco', 'auth.json'), hp('.coco', 'credentials.json')],
+    installHint: 'npm install -g trae-cli',
+    runtimes: ['node'],
+    docs: 'https://docs.trae.cn/cli/get-started-with-trae-cli',
+  },
 ];
 
 /**

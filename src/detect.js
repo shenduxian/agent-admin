@@ -1,7 +1,7 @@
 'use strict';
 
 const { AGENTS } = require('./registry');
-const { which, tryVersion, pathExists } = require('./utils');
+const { whichAll, tryVersion, pathExists } = require('./utils');
 
 /**
  * Probe a single agent and return a status object.
@@ -10,6 +10,11 @@ const { which, tryVersion, pathExists } = require('./utils');
  * "installed" if we can find a binary OR a desktop bundle OR a config dir,
  * which lets us surface partial installs (e.g. config left behind after an
  * uninstall) instead of pretending nothing is there.
+ *
+ * All matches for each candidate binary are collected (not just the first on
+ * PATH), so a machine with several copies of the same agent — a brew build, an
+ * npm global, an nvm-managed one — is reported as such instead of silently
+ * picking whichever shadows the rest.
  */
 function detectAgent(agent) {
   const status = {
@@ -18,29 +23,37 @@ function detectAgent(agent) {
     kind: agent.kind,
     installed: false,
     binPath: null,
+    binPaths: [],
     version: null,
+    multipleInstalls: false,
     appPath: null,
+    appPaths: [],
     configPresent: [],
     runtimes: agent.runtimes || [],
     installHint: agent.installHint,
   };
 
+  const versionArgs = agent.versionArgs || ['--version'];
+  const seen = new Set();
   for (const bin of agent.bins || []) {
-    const p = which(bin);
-    if (p) {
-      status.binPath = p;
-      status.installed = true;
-      const v = tryVersion(bin, agent.versionArgs || ['--version']);
-      if (v) status.version = v;
-      break;
+    for (const p of whichAll(bin)) {
+      if (seen.has(p)) continue;
+      seen.add(p);
+      status.binPaths.push({ path: p, version: tryVersion(p, versionArgs) });
     }
+  }
+  if (status.binPaths.length) {
+    status.installed = true;
+    status.binPath = status.binPaths[0].path;
+    status.version = status.binPaths[0].version;
+    status.multipleInstalls = status.binPaths.length > 1;
   }
 
   for (const app of agent.appPaths || []) {
     if (pathExists(app)) {
-      status.appPath = app;
+      status.appPaths.push(app);
+      if (!status.appPath) status.appPath = app;
       status.installed = true;
-      break;
     }
   }
 

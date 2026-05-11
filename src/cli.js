@@ -114,6 +114,8 @@ function registerDoctor(program) {
             installed: d.installed,
             partial: Boolean(d.partial),
             version: d.version,
+            multipleInstalls: Boolean(d.multipleInstalls),
+            binPaths: d.binPaths,
             runtimes: requiredRuntimesFor(agent),
             credentials: credsEnvStatus(agent),
           };
@@ -268,12 +270,18 @@ function printAgentTable(rows) {
     return;
   }
   const header = ['', 'AGENT', 'VERSION', 'PATH'];
-  const data = rows.map((r) => [
-    r.installed ? (r.partial ? chalk.yellow('~') : chalk.green('✓')) : chalk.dim('·'),
-    r.id,
-    r.version || (r.installed ? chalk.dim('-') : ''),
-    r.binPath || r.appPath || (r.configPresent[0] ? chalk.dim(r.configPresent[0]) : ''),
-  ]);
+  const data = rows.map((r) => {
+    let pathCell = r.binPath || r.appPath || (r.configPresent[0] ? chalk.dim(r.configPresent[0]) : '');
+    if (r.multipleInstalls) {
+      pathCell = `${pathCell}  ${chalk.yellow(`(+${r.binPaths.length - 1} more — run \`info ${r.id}\`)`)}`;
+    }
+    return [
+      r.installed ? (r.partial ? chalk.yellow('~') : chalk.green('✓')) : chalk.dim('·'),
+      r.id,
+      r.version || (r.installed ? chalk.dim('-') : ''),
+      pathCell,
+    ];
+  });
   printTable(header, data);
 }
 
@@ -282,7 +290,13 @@ function printAgentDetail(agent, d) {
   console.log(`${chalk.bold(agent.name)}  ${chalk.dim(`(${agent.id})`)}  ${tag}`);
   if (d.version) console.log(`  version    ${d.version}`);
   if (d.binPath) console.log(`  binary     ${d.binPath}`);
-  if (d.appPath) console.log(`  app        ${d.appPath}`);
+  if (d.multipleInstalls) {
+    console.log(`  ${chalk.yellow('warning')}    ${d.binPaths.length} copies on PATH — the first one wins:`);
+    for (const b of d.binPaths) {
+      console.log(`             ${b.path}${b.version ? '  ' + chalk.dim(b.version) : ''}`);
+    }
+  }
+  for (const a of d.appPaths || []) console.log(`  app        ${a}`);
   if (agent.docs) console.log(`  docs       ${chalk.dim(agent.docs)}`);
   if (!d.installed && agent.installHint) {
     console.log(`  ${chalk.yellow('hint')}       ${agent.installHint}`);
@@ -340,6 +354,9 @@ function printDoctorReport(report) {
   for (const a of report.agents) {
     const tag = a.installed ? (a.partial ? chalk.yellow('~') : chalk.green('✓')) : chalk.dim('·');
     console.log(`  ${tag}  ${a.id}${a.version ? '  ' + chalk.dim(a.version) : ''}`);
+    if (a.multipleInstalls) {
+      console.log(`    ${chalk.yellow('  warn')}  ${a.binPaths.length} copies on PATH (first wins): ${chalk.dim(a.binPaths.map((b) => b.path).join(', '))}`);
+    }
     for (const r of a.runtimes) {
       const mark = r.ok ? chalk.green('  ok  ') : chalk.red('  miss');
       console.log(`    ${mark}  runtime: ${r.id}${r.version ? '  ' + chalk.dim(r.version) : ''}`);
